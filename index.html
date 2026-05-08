@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomidoro Questing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #1a1008;
+            background-image: url('background.png');
+            background-size: cover;
+            background-position: center top;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            font-family: 'Cinzel', serif;
+            color: #fff;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 920px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* ── Title ── */
+        .title-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px 0 10px;
+        }
+
+        .title-section h1 {
+            font-size: 2.2rem;
+            color: #ffb83f;
+            text-shadow: 0 0 20px rgba(255,184,63,0.5), 2px 2px 0 #000;
+            letter-spacing: 3px;
+        }
+
+        .title-section p {
+            color: #a08050;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        .title-section .day-remaining {
+            color: #c8902a;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            margin-top: 10px;
+            text-shadow: 1px 1px 0 #000, 0 0 12px rgba(200,144,42,0.5);
+        }
+
+        .title-section .day-remaining span {
+            color: #ffb83f;
+            font-weight: 700;
+            font-size: 1.3rem;
+            text-shadow: 0 0 16px rgba(255,184,63,0.7), 1px 1px 0 #000;
+        }
+
+        /* ── OSRS Panel ── */
+        .osrs-panel {
+            background-color: #1a1008;
+            border: 3px solid #000;
+            box-shadow:
+                inset 0 0 0 1px #5c4a26,
+                inset 2px 2px 0 #8b6914,
+                inset -2px -2px 0 #3d2f0a,
+                0 4px 15px rgba(0,0,0,0.8);
+            padding: 15px;
+        }
+
+        .panel-header {
+            background: linear-gradient(180deg, #4a3520 0%, #2d1f0a 100%);
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #8b6914, inset -1px -1px 0 #2a1800;
+            padding: 8px 12px;
+            margin: -15px -15px 15px -15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header h2 {
+            color: #ffb83f;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* ── Mode Buttons ── */
+        .timer-mode-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 6px 4px;
+            background: linear-gradient(180deg, #3d2f0a 0%, #2a1f07 100%);
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #6b5020, inset -1px -1px 0 #1a1000;
+            color: #a08050;
+            font-family: 'Cinzel', serif;
+            font-size: 0.68rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.1s;
+        }
+
+        .mode-btn:hover { background: linear-gradient(180deg, #5c4a26 0%, #3d2f0a 100%); color: #ffb83f; }
+        .mode-btn.active {
+            background: linear-gradient(180deg, #6b5020 0%, #4a3520 100%);
+            color: #ffb83f;
+            box-shadow: inset 2px 2px 0 #1a1000, inset -1px -1px 0 #8b6914;
+        }
+
+        /* ── Timer Display ── */
+        .timer-display { text-align: center; margin: 20px 0; }
+
+        .timer-time {
+            font-size: 4rem;
+            color: #ffb83f;
+            text-shadow: 0 0 20px rgba(255,184,63,0.6), 2px 2px 0 #000;
+            letter-spacing: 5px;
+            font-weight: 700;
+        }
+
+        .timer-status {
+            color: #a08050;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        .timer-progress-track {
+            height: 12px;
+            background: #0d0a04;
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #1a1000, inset -1px -1px 0 #3d2f0a;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .timer-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a8a00, #6aaa00, #88cc00);
+            box-shadow: 0 0 8px rgba(106,170,0,0.5);
+            transition: width 1s linear;
+            width: 100%;
+        }
+
+        /* ── Buttons ── */
+        .timer-controls { display: flex; gap: 8px; justify-content: center; }
+
+        .osrs-btn {
+            padding: 8px 16px;
+            background: linear-gradient(180deg, #4a3520 0%, #2d1f0a 100%);
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #8b6914, inset -1px -1px 0 #1a1000;
+            color: #ffb83f;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.1s;
+        }
+
+        .osrs-btn:hover { background: linear-gradient(180deg, #6b5020 0%, #4a3520 100%); color: #ffe080; }
+        .osrs-btn:active { box-shadow: inset 2px 2px 0 #1a1000, inset -1px -1px 0 #8b6914; }
+        .osrs-btn.primary { background: linear-gradient(180deg, #5c4a26 0%, #3d3010 100%); }
+        .osrs-btn.primary:hover { background: linear-gradient(180deg, #7a6030 0%, #5c4a20 100%); }
+
+        /* ── Session Stats ── */
+        .session-stats {
+            margin-top: 15px;
+            padding: 10px;
+            background: #0d0a04;
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #1a1000;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-label { color: #6b5020; font-size: 0.65rem; letter-spacing: 1px; }
+        .stat-value { color: #ffb83f; font-size: 1.4rem; font-weight: 700; text-shadow: 1px 1px 0 #000; }
+        .stat-icon { font-size: 1rem; }
+
+        /* ── Quest XP Bar ── */
+        .quest-xp-bar {
+            margin-top: 10px;
+            padding: 8px 10px;
+            background: #0d0a04;
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 0 #1a1000;
+        }
+
+        .quest-xp-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .quest-xp-label .xp-title { color: #6b5020; font-size: 0.65rem; letter-spacing: 1px; }
+        .quest-xp-label .xp-count { color: #ffb83f; font-size: 0.85rem; font-weight: 700; text-shadow: 1px 1px 0 #000; }
+
+        .quest-xp-track {
+            height: 10px;
+            background: #0a0804;
+            border: 1px solid #000;
+            box-shadow: inset 1px 1px 0 #000;
+            overflow: hidden;
+        }
+
+        .quest-xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #5500aa, #8800ee, #bb44ff);
+            box-shadow: 0 0 8px rgba(140,0,255,0.5);
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* ── Todo Input ── */
+        .todo-input-area { display: flex; gap: 8px; margin-bottom: 12px; }
+
+        .osrs-input {
+            flex: 1;
+            padding: 8px 10px;
+            background: #0d0a04;
+            border: 2px solid #000;
+            box-shadow: inset 2px 2px 0 #1a1000, inset -1px -1px 0 #3d2f0a;
+            color: #ffb83f;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            outline: none;
+            caret-color: #ffb83f;
+        }
+
+        .osrs-input::placeholder { color: #3d2f0a; }
+        .osrs-input:focus { box-shadow: inset 2px 2px 0 #000, inset -1px -1px 0 #3d2f0a, 0 0 0 1px #6b5020; }
+
+        /* ── Quest List ── */
+        .quest-list {
+            list-style: none;
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+        .quest-list::-webkit-scrollbar { width: 8px; }
+        .quest-list::-webkit-scrollbar-track { background: #0d0a04; border: 1px solid #000; }
+        .quest-list::-webkit-scrollbar-thumb { background: #4a3520; border: 1px solid #000; }
+
+        .quest-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #2a1f07;
+            transition: background 0.1s;
+        }
+
+        .quest-item:hover { background: #1f1608; }
+        .quest-item.completed .quest-name { text-decoration: line-through; color: #6b5020; }
+        .quest-item.completed { opacity: 0.65; }
+
+        .quest-checkbox {
+            width: 18px;
+            height: 18px;
+            background: #0d0a04;
+            border: 2px solid #2a1f07;
+            box-shadow: inset 1px 1px 0 #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #ffb83f;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .quest-item:hover .quest-checkbox { border-color: #6b5020; }
+        .quest-item.completed .quest-checkbox { background: #1a3300; border-color: #336600; color: #66cc00; }
+
+        .quest-name { flex: 1; color: #e8d090; font-size: 0.82rem; letter-spacing: 0.5px; }
+
+        .quest-delete {
+            color: #4a2020;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px 5px;
+            opacity: 0;
+            transition: opacity 0.1s, color 0.1s;
+        }
+
+        .quest-item:hover .quest-delete { opacity: 1; }
+        .quest-delete:hover { color: #cc4444; }
+
+        .osrs-btn.danger {
+            background: linear-gradient(180deg, #3a1010 0%, #220a0a 100%);
+            color: #cc4444;
+            box-shadow: inset 1px 1px 0 #6b2020, inset -1px -1px 0 #1a0000;
+            font-size: 0.7rem;
+            padding: 6px 12px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .osrs-btn.danger:hover {
+            background: linear-gradient(180deg, #5a1a1a 0%, #3a1010 100%);
+            color: #ff6666;
+        }
+
+        .empty-quests {
+            text-align: center;
+            padding: 30px;
+            color: #3d2f0a;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            line-height: 1.8;
+        }
+
+        /* ── Level Up Banner ── */
+        .level-up-banner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, #4a3520 0%, #1a1008 100%);
+            border: 3px solid #ffb83f;
+            box-shadow: 0 0 30px rgba(255,184,63,0.7), inset 1px 1px 0 #8b6914;
+            padding: 20px 40px;
+            text-align: center;
+            z-index: 1000;
+            animation: levelUpAnim 2.5s ease-out forwards;
+        }
+
+        .level-up-banner h3 { color: #ffb83f; font-size: 1.5rem; letter-spacing: 3px; text-shadow: 0 0 20px rgba(255,184,63,0.8); }
+        .level-up-banner p { color: #e8d090; font-size: 0.85rem; margin-top: 5px; letter-spacing: 2px; }
+
+        @keyframes levelUpAnim {
+            0%   { opacity: 0; transform: translate(-50%, -60%); }
+            15%  { opacity: 1; transform: translate(-50%, -50%); }
+            70%  { opacity: 1; transform: translate(-50%, -50%); }
+            100% { opacity: 0; transform: translate(-50%, -40%); }
+        }
+
+        /* ── Pomodoro Complete Banner ── */
+        .pomo-banner {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #1a2a00 0%, #0d1500 100%);
+            border: 3px solid #66cc00;
+            box-shadow: 0 0 20px rgba(102,204,0,0.5);
+            padding: 12px 30px;
+            text-align: center;
+            z-index: 1000;
+            animation: pomoBanner 3s ease-out forwards;
+            white-space: nowrap;
+        }
+
+        .pomo-banner p { color: #66ff00; font-size: 0.9rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(102,255,0,0.5); }
+
+        @keyframes pomoBanner {
+            0%   { opacity: 0; top: -50px; }
+            15%  { opacity: 1; top: 20px; }
+            70%  { opacity: 1; top: 20px; }
+            100% { opacity: 0; top: -50px; }
+        }
+
+        .quote-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 18px 30px 24px;
+            border-top: 1px solid #3d2f0a;
+        }
+
+        .quote-section blockquote {
+            color: #c8a96e;
+            font-size: 0.82rem;
+            line-height: 1.9;
+            letter-spacing: 1px;
+            font-style: italic;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .quote-section cite {
+            display: block;
+            margin-top: 10px;
+            color: #6b5020;
+            font-size: 0.7rem;
+            font-style: normal;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 650px) {
+            .container { grid-template-columns: 1fr; }
+            .title-section h1 { font-size: 1.5rem; }
+            .timer-time { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <div class="title-section">
+        <h1>&#9876; POMIDORO QUESTING &#9876;</h1>
+        <p class="day-remaining">&#9876; DAY ENDS IN <span id="day-remaining">--:--:--</span> &nbsp;(EST)</p>
+    </div>
+
+    <!-- Pomodoro Panel -->
+    <div class="osrs-panel">
+        <div class="panel-header">
+            <span>&#128336;</span>
+            <h2>&#8987; FOCUS TIMER</h2>
+            <span>&#128336;</span>
+        </div>
+
+        <div class="timer-mode-selector">
+            <button class="mode-btn active" id="btn-work"  onclick="setMode('work')">WORK SESSION</button>
+            <button class="mode-btn"        id="btn-short" onclick="setMode('short')">SHORT REST</button>
+            <button class="mode-btn"        id="btn-long"  onclick="setMode('long')">LONG REST</button>
+        </div>
+
+        <div class="timer-display">
+            <div class="timer-time"   id="timer-display">25:00</div>
+            <div class="timer-status" id="timer-status">READY TO BEGIN</div>
+        </div>
+
+        <div class="timer-progress-track">
+            <div class="timer-progress-fill" id="timer-progress"></div>
+        </div>
+
+        <div class="timer-controls">
+            <button class="osrs-btn primary" id="start-btn" onclick="toggleTimer()">&#9654; START</button>
+            <button class="osrs-btn"                        onclick="resetTimer()">&#8635; RESET</button>
+        </div>
+
+        <div class="session-stats">
+            <div class="stat-item">
+                <div class="stat-icon">&#128293;</div>
+                <div class="stat-value" id="session-count">0</div>
+                <div class="stat-label">SESSIONS</div>
+            </div>
+            <div class="stat-item">
+                <img src="skills.png" alt="Skills" style="height:28px; image-rendering:pixelated; display:block; margin:0 auto 2px;">
+                <div class="stat-value" id="focus-level">0</div>
+                <div class="stat-label">FOCUS LVL</div>
+            </div>
+            <div class="stat-item">
+                <img src="questcape.png" alt="Quest Cape" style="height:28px; image-rendering:pixelated; display:block; margin:0 auto 2px;">
+                <div class="stat-value" id="tasks-done">0/99</div>
+                <div class="stat-label">QUESTS DONE</div>
+            </div>
+        </div>
+
+        <div class="quest-xp-bar">
+            <div class="quest-xp-label">
+                <span class="xp-title">QUEST PROGRESS</span>
+                <span class="xp-count" id="quest-progress-text">0 / 99</span>
+            </div>
+            <div class="quest-xp-track">
+                <div class="quest-xp-fill" id="quest-xp-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quest Log Panel -->
+    <div class="osrs-panel">
+        <div class="panel-header">
+            <img src="quest.png" alt="Quest" style="height:22px; image-rendering:pixelated;">
+            <h2>&#128220; QUEST LOG</h2>
+            <img src="quest.png" alt="Quest" style="height:22px; image-rendering:pixelated;">
+        </div>
+
+        <div class="todo-input-area">
+            <input
+                type="text"
+                class="osrs-input"
+                id="task-input"
+                placeholder="Add new quest..."
+                maxlength="60"
+                onkeydown="if(event.key==='Enter') addTask()"
+            >
+            <button class="osrs-btn" onclick="addTask()">+ ADD</button>
+        </div>
+
+        <ul class="quest-list" id="quest-list"></ul>
+        <div class="empty-quests" id="empty-state">
+            ~ No quests in your journal ~<br>Add a task to begin your adventure
+        </div>
+
+        <button class="osrs-btn danger" onclick="resetAll()">&#9760; RESET ALL PROGRESS</button>
+    </div>
+
+    <!-- Quote -->
+    <div class="quote-section">
+        <blockquote>
+            "If you don't produce, you won't thrive—no matter how skilled or talented you are.<br>
+            Who you are, what you think, feel, and do, what you love—is the sum of what you focus on."
+        </blockquote>
+        <cite>— CAL NEWPORT</cite>
+    </div>
+
+</div>
+
+<script>
+// ── Audio ──────────────────────────────────────────────
+let audioCtx = null;
+function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+function tone(freq, dur, type = 'square', vol = 0.12) {
+    try {
+        const ctx = getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + dur);
+    } catch(e) {}
+}
+function sfxClick()        { tone(300, 0.06); }
+function sfxTaskDone()     { tone(440,0.1); setTimeout(()=>tone(554,0.1),80); setTimeout(()=>tone(659,0.15),160); }
+function sfxLevelUp()      { [440,494,523,587,659,740,831,880].forEach((f,i)=>setTimeout(()=>tone(f,0.18,'square',0.1),i*80)); }
+function sfxTimerDone()    { tone(880,0.3,'sine',0.18); setTimeout(()=>tone(1108,0.3,'sine',0.14),350); setTimeout(()=>tone(1318,0.5,'sine',0.1),700); }
+
+// ── Timer ──────────────────────────────────────────────
+const MODES = {
+    work:  { minutes: 25, status: 'FOCUS, ADVENTURER...' },
+    short: { minutes: 5,  status: 'RESTING...' },
+    long:  { minutes: 15, status: 'LONG REST...' },
+};
+let mode = 'work';
+let total = 25 * 60;
+let remaining = total;
+let running = false;
+let intervalId = null;
+let sessions = 0;
+let focusLevel = 0;
+
+function setMode(m) {
+    if (running) return;
+    sfxClick();
+    mode = m;
+    total = MODES[m].minutes * 60;
+    remaining = total;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + m).classList.add('active');
+    document.getElementById('timer-status').textContent = 'READY TO BEGIN';
+    refreshDisplay();
+}
+
+function toggleTimer() {
+    sfxClick();
+    running ? pause() : start();
+}
+
+function start() {
+    running = true;
+    document.getElementById('start-btn').textContent = '⏸ PAUSE';
+    document.getElementById('timer-status').textContent = MODES[mode].status;
+    intervalId = setInterval(tick, 1000);
+}
+
+function pause() {
+    running = false;
+    clearInterval(intervalId);
+    document.getElementById('start-btn').textContent = '▶ RESUME';
+    document.getElementById('timer-status').textContent = 'PAUSED';
+}
+
+function resetTimer() {
+    sfxClick();
+    running = false;
+    clearInterval(intervalId);
+    remaining = total;
+    document.getElementById('start-btn').textContent = '▶ START';
+    document.getElementById('timer-status').textContent = 'READY TO BEGIN';
+    refreshDisplay();
+}
+
+function tick() {
+    remaining--;
+    refreshDisplay();
+    if (remaining <= 0) complete();
+}
+
+function complete() {
+    clearInterval(intervalId);
+    running = false;
+    document.getElementById('start-btn').textContent = '▶ START';
+    document.getElementById('timer-status').textContent = 'SESSION COMPLETE!';
+    sfxTimerDone();
+    if (mode === 'work') {
+        sessions++;
+        document.getElementById('session-count').textContent = sessions;
+        showPomoBanner();
+    }
+    remaining = total;
+    refreshDisplay();
+}
+
+function refreshQuestBar() {
+    const capped = Math.min(doneCount, 99);
+    document.getElementById('tasks-done').textContent = capped + '/99';
+    document.getElementById('quest-progress-text').textContent = capped + ' / 99';
+    document.getElementById('quest-xp-fill').style.width = (capped / 99 * 100) + '%';
+}
+
+function refreshDisplay() {
+    const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const s = String(remaining % 60).padStart(2, '0');
+    document.getElementById('timer-display').textContent = m + ':' + s;
+    const pct = (remaining / total) * 100;
+    const fill = document.getElementById('timer-progress');
+    fill.style.width = pct + '%';
+    fill.style.background =
+        pct > 50 ? 'linear-gradient(90deg,#4a8a00,#6aaa00,#88cc00)' :
+        pct > 25 ? 'linear-gradient(90deg,#8a6a00,#aa8800,#ccaa00)' :
+                   'linear-gradient(90deg,#8a2000,#aa3000,#cc5000)';
+}
+
+// ── Tasks ──────────────────────────────────────────────
+let tasks     = JSON.parse(localStorage.getItem('rsTasks') || '[]');
+let doneCount = parseInt(localStorage.getItem('rsDone')  || '0');
+
+function save() {
+    localStorage.setItem('rsTasks', JSON.stringify(tasks));
+    localStorage.setItem('rsDone',  doneCount.toString());
+}
+
+function render() {
+    const list  = document.getElementById('quest-list');
+    const empty = document.getElementById('empty-state');
+    list.innerHTML = '';
+    if (!tasks.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    tasks.forEach((task, i) => {
+        const li = document.createElement('li');
+        li.className = 'quest-item' + (task.done ? ' completed' : '');
+        li.innerHTML =
+            '<div class="quest-checkbox" onclick="toggleTask(' + i + ')">' + (task.done ? '&#10003;' : '') + '</div>' +
+            '<span class="quest-name">' + esc(task.text) + '</span>' +
+            '<span class="quest-delete" onclick="deleteTask(' + i + ',event)">&#10005;</span>';
+        list.appendChild(li);
+    });
+}
+
+function esc(t) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(t));
+    return d.innerHTML;
+}
+
+function addTask() {
+    const input = document.getElementById('task-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    sfxClick();
+    tasks.unshift({ text, done: false });
+    input.value = '';
+    save();
+    render();
+}
+
+function toggleTask(i) {
+    const task = tasks[i];
+    if (!task.done) {
+        task.done = true;
+        doneCount++;
+        if (doneCount <= 99) {
+            focusLevel = doneCount;
+            document.getElementById('focus-level').textContent = focusLevel;
+            sfxLevelUp();
+            showLevelUp(focusLevel);
+        }
+        sfxTaskDone();
+    } else {
+        task.done = false;
+        doneCount = Math.max(0, doneCount - 1);
+        focusLevel = Math.min(doneCount, 99);
+        document.getElementById('focus-level').textContent = focusLevel;
+    }
+    refreshQuestBar();
+    save();
+    render();
+}
+
+function deleteTask(i, e) {
+    e.stopPropagation();
+    sfxClick();
+    tasks.splice(i, 1);
+    save();
+    render();
+}
+
+// ── UI Effects ─────────────────────────────────────────
+
+function showLevelUp(lvl) {
+    const el = document.createElement('div');
+    el.className = 'level-up-banner';
+    el.innerHTML = '<h3>&#9876; CONGRATULATIONS &#9876;</h3><p>YOUR FOCUS LEVEL IS NOW ' + lvl + '!</p>';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+}
+
+function showPomoBanner() {
+    const el = document.createElement('div');
+    el.className = 'pomo-banner';
+    el.innerHTML = '<p>&#8987; SESSION COMPLETE &#8212; TAKE A REST, ADVENTURER!</p>';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3100);
+}
+
+// ── Reset ──────────────────────────────────────────────
+function resetAll() {
+    if (!confirm('Reset all quests and levels? This cannot be undone.')) return;
+    sfxClick();
+    tasks = [];
+    doneCount = 0;
+    focusLevel = 0;
+    sessions = 0;
+    localStorage.removeItem('rsTasks');
+    localStorage.removeItem('rsDone');
+    document.getElementById('focus-level').textContent = 0;
+    document.getElementById('session-count').textContent = 0;
+    refreshQuestBar();
+    render();
+}
+
+// ── Day Remaining (EST) ────────────────────────────────
+function updateDayRemaining() {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    }).formatToParts(new Date());
+    const h = parseInt(parts.find(p => p.type === 'hour').value);
+    const m = parseInt(parts.find(p => p.type === 'minute').value);
+    const s = parseInt(parts.find(p => p.type === 'second').value);
+    const left = 86400 - (h * 3600 + m * 60 + s);
+    const rh = String(Math.floor(left / 3600)).padStart(2, '0');
+    const rm = String(Math.floor((left % 3600) / 60)).padStart(2, '0');
+    const rs = String(left % 60).padStart(2, '0');
+    document.getElementById('day-remaining').textContent = rh + ':' + rm + ':' + rs;
+}
+setInterval(updateDayRemaining, 1000);
+
+// ── Init ───────────────────────────────────────────────
+focusLevel = Math.min(doneCount, 99);
+document.getElementById('focus-level').textContent = focusLevel;
+refreshQuestBar();
+refreshDisplay();
+updateDayRemaining();
+render();
+</script>
+</body>
+</html>
