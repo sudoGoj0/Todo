@@ -473,14 +473,9 @@
                 <div class="stat-label">SESSIONS</div>
             </div>
             <div class="stat-item">
-                <img src="skills.png" alt="Skills" style="height:28px; image-rendering:pixelated; display:block; margin:0 auto 2px;">
-                <div class="stat-value" id="focus-level">0</div>
-                <div class="stat-label">FOCUS LVL</div>
-            </div>
-            <div class="stat-item">
                 <img src="questcape.png" alt="Quest Cape" style="height:28px; image-rendering:pixelated; display:block; margin:0 auto 2px;">
                 <div class="stat-value" id="tasks-done">0/99</div>
-                <div class="stat-label">QUESTS DONE</div>
+                <div class="stat-label">QUEST LVL</div>
             </div>
         </div>
 
@@ -573,7 +568,6 @@ let remaining = total;
 let running = false;
 let intervalId = null;
 let sessions = 0;
-let focusLevel = 0;
 
 function setMode(m) {
     if (running) return;
@@ -706,17 +700,13 @@ function toggleTask(i) {
         task.done = true;
         doneCount++;
         if (doneCount <= 99) {
-            focusLevel = doneCount;
-            document.getElementById('focus-level').textContent = focusLevel;
             sfxLevelUp();
-            showLevelUp(focusLevel);
+            showLevelUp(doneCount);
         }
         sfxTaskDone();
     } else {
         task.done = false;
         doneCount = Math.max(0, doneCount - 1);
-        focusLevel = Math.min(doneCount, 99);
-        document.getElementById('focus-level').textContent = focusLevel;
     }
     refreshQuestBar();
     save();
@@ -736,7 +726,7 @@ function deleteTask(i, e) {
 function showLevelUp(lvl) {
     const el = document.createElement('div');
     el.className = 'level-up-banner';
-    el.innerHTML = '<h3>&#9876; CONGRATULATIONS &#9876;</h3><p>YOUR FOCUS LEVEL IS NOW ' + lvl + '!</p>';
+    el.innerHTML = '<h3>&#9876; CONGRATULATIONS &#9876;</h3><p>YOUR QUEST LEVEL IS NOW ' + lvl + '!</p>';
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 2600);
 }
@@ -759,7 +749,6 @@ function resetAll() {
     sessions = 0;
     localStorage.removeItem('rsTasks');
     localStorage.removeItem('rsDone');
-    document.getElementById('focus-level').textContent = 0;
     document.getElementById('session-count').textContent = 0;
     refreshQuestBar();
     render();
@@ -784,8 +773,6 @@ function updateDayRemaining() {
 setInterval(updateDayRemaining, 1000);
 
 // ── Init ───────────────────────────────────────────────
-focusLevel = Math.min(doneCount, 99);
-document.getElementById('focus-level').textContent = focusLevel;
 refreshQuestBar();
 refreshDisplay();
 updateDayRemaining();
